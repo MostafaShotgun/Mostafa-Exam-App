@@ -327,6 +327,15 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
+document.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+});
+document.onkeydown = function(e) {
+    if (e.key === 'u' && e.ctrlKey) {
+        e.preventDefault();
+    }
+};
+
 window.onload = () => {
     switchMode('chapters');
 };
