@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار الأسئلة</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="mode-selector">
+            <button class="mode-btn" onclick="switchMode('chapters')">عرض الفصول</button>
+            <button class="mode-btn" onclick="switchMode('exam')">وضع الامتحان</button>
+            <button class="mode-btn" onclick="switchMode('history')">سجل الامتحانات</button>
+            <button class="mode-btn danger-btn" onclick="showCustomConfirm('هل أنت متأكد من مسح جميع سجل الامتحانات؟', clearHistory)">مسح السجل</button>
+        </div>
+        <div class="chapter-header" id="chapterHeader">
+            <button class="nav-btn" id="prevChapterBtn" onclick="prevChapter()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            <h1 id="chapterTitle">الفصل الأول</h1>
+            <button class="nav-btn" id="nextChapterBtn" onclick="nextChapter()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+        </div>
+        <div class="questions" id="questionsContainer"></div>
+    </div>
+
+    <!-- Custom Modal -->
+    <div class="modal" id="customModal">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm-btn" onclick="handleModalConfirm(true)">تأكيد</button>
+                <button class="modal-btn cancel-btn" onclick="handleModalConfirm(false)">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Prompt Modal for Question Count -->
+    <div class="modal" id="customPromptModal">
+        <div class="modal-content">
+            <p>حدد عدد الأسئلة:</p>
+            <select id="questionCountSelect">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+                <option value="25">25</option>
+                <option value="30">30</option>
+                <option value="35">35</option>
+                <option value="40">40</option>
+                <option value="45">45</option>
+                <option value="50" selected>50</option>
+            </select>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm-btn" onclick="handlePromptConfirm()">تأكيد</button>
+                <button class="modal-btn cancel-btn" onclick="handlePromptCancel()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
