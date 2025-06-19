@@ -142,6 +142,110 @@
       color: #6b7280;
       font-size: 0.9rem;
     }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+    }
+
+    .modal-buttons {
+      margin-top: 1rem;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .modal-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .confirm-btn {
+      background-color: #2563eb;
+      color: white;
+    }
+
+    .cancel-btn {
+      background-color: #e5e7eb;
+      color: #111827;
+    }
+
+    .exam-container {
+      display: none;
+      padding: 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .exam-container.active {
+      display: block;
+    }
+
+    .question {
+      background: white;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .option-btn {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #f9fafb;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .option-btn:hover {
+      background: #e5e7eb;
+    }
+
+    .option-btn.correct {
+      background: #15fa20;
+      color: white;
+    }
+
+    .option-btn.incorrect {
+      background: #ef4444;
+      color: white;
+    }
+
+    .result {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -160,257 +264,275 @@
       <button id="filterAll" class="active">الكل</button>
       <button id="filterSaved">المحفوظ فقط</button>
       <button id="filterUnsaved">غير المحفوظ</button>
+      <button id="startExam">بدء الامتحان</button>
     </div>
   </header>
 
   <div class="grid" id="termContainer"></div>
+  <div class="exam-container" id="examContainer"></div>
+
+  <div class="modal" id="customModal">
+    <div class="modal-content">
+      <p id="modalMessage"></p>
+      <div class="modal-buttons">
+        <button class="modal-btn confirm-btn" id="modalConfirm">تأكيد</button>
+        <button class="modal-btn cancel-btn" id="modalCancel">إلغاء</button>
+      </div>
+    </div>
+  </div>
 
   <footer>
     © Mostafa Adel _ 01002789493 ❤️
   </footer>
 
   <script>
-const legalTerms = [
-  { en: "The theory of law", ar: "نظریة القانون" },
-  { en: "Legal rule", ar: "قاعدة قانونیة" },
-  { en: "Legal system", ar: "النظام القانوني" },
-  { en: "Crime", ar: "جریمة" },
-  { en: "Criminal", ar: "مجرم" },
-  { en: "Premeditated murder", ar: "قتل مع سبق الإصرار والترصد" },
-  { en: "Intentional murder", ar: "قتل عمدي" },
-  { en: "Unintentional murder", ar: "قتل غیر عمدي" },
-  { en: "Negligence", ar: "إھمال" },
-  { en: "Murderer", ar: "قاتل" },
-  { en: "Legal sanction", ar: "جزاء قانوني" },
-  { en: "Compensation", ar: "تعویض" },
-  { en: "Death penalty (Capital Punishment)", ar: "الإعدام" },
-  { en: "Sentenced to death", ar: "یحكم بإعدامھ" },
-  { en: "Imprisonment", ar: "السجن" },
-  { en: "Fine", ar: "غرامة" },
-  { en: "Dismissal from the job", ar: "الفصل من الوظیفة" },
-  { en: "Civil sanction", ar: "جزاء مدني" },
-  { en: "Criminal sanction", ar: "جزاء جنائي" },
-  { en: "Administrative sanction", ar: "جزاء إداري" },
-  { en: "Tortious Act", ar: "فعل تقصیري" },
-  { en: "Supreme Constitutional Court", ar: "المحكمة الدستوریة العلیا" },
-  { en: "Public Law", ar: "القانون العام" },
-  { en: "Private Law", ar: "القانون الخاص" },
-  { en: "Public sector", ar: "القطاع العام" },
-  { en: "Private sector", ar: "القطاع الخاص" },
-  { en: "Interest", ar: "مصلحة" },
-  { en: "Expropriation", ar: "نزع الملكیة للمنفعة العامة" },
-  { en: "Constitutional law", ar: "القانون الدستوري" },
-  { en: "Political system", ar: "النظام السیاسي" },
-  { en: "Public authority", ar: "سلطة عامة" },
-  { en: "Legislative authority", ar: "السلطة التشریعیة" },
-  { en: "House of Representatives", ar: "مجلس النواب" },
-  { en: "Executive authority", ar: "السلطة التنفیذیة" },
-  { en: "Government", ar: "الحكومة" },
-  { en: "Judicial authority", ar: "السلطة القضائیة" },
-  { en: "Freedom of expression", ar: "حریة التعبیر عن الرأي" },
-  { en: "Freedom of religion", ar: "حریة إختیار الدین" },
-  { en: "Administrative law", ar: "القانون الإداري" },
-  { en: "Local government system", ar: "نظام الحكم المحلي" },
-  { en: "Centralized government", ar: "الحكومة المركزیة" },
-  { en: "Public Utility", ar: "مرفق عام" },
-  { en: "Financial law", ar: "القانون المالي" },
-  { en: "Criminal law", ar: "القانون الجنائي" },
-  { en: "Penal law", ar: "قانون العقوبات" },
-  { en: "Criminal procedures law", ar: "قانون الإجراءات الجنائیة" },
-  { en: "Suspect", ar: "مشتبھ فیھ" },
-  { en: "Accused", ar: "متھم" },
-  { en: "Prosecution", ar: "تحقیق" },
-  { en: "Victim", ar: "ضحیة" },
-  { en: "Public international law", ar: "القانون الدولي العام" },
-  { en: "International organizations", ar: "المنظمات الدولیة" },
-  { en: "International treaties", ar: "المعاھدات الدولیة" },
-  { en: "Peace", ar: "السلام" },
-  { en: "War", ar: "الحرب" },
-  { en: "Civil law", ar: "القانون المدني" },
-  { en: "Personal relationship", ar: "علاقة شخصیة" },
-  { en: "Monetary relationship", ar: "علاقة مالیة" },
-  { en: "Commercial law", ar: "القانون التجاري" },
-  { en: "Merchant", ar: "تاجر" },
-  { en: "Bankruptcy", ar: "إفلاس" },
-  { en: "Company", ar: "شركة" },
-  { en: "Law of civil and commercial procedures", ar: "قانون المرافعات المدنیة والتجاریة" },
-  { en: "Labor law", ar: "قانون العمل" },
-  { en: "Conflict of laws", ar: "تنازع القوانین" },
-  { en: "Private international law", ar: "القانون الدولي الخاص" },
-  { en: "Competent court", ar: "المحكمة المختصة" },
-  { en: "Imperative rule", ar: "قاعدة آمرة" },
-  { en: "Supplementary rule", ar: "قاعدة مكملة" },
-  { en: "Personal liberty", ar: "حریة شخصیة" },
-  { en: "Public order", ar: "النظام العام" },
-  { en: "Public morals", ar: "الآداب العامة" },
-  { en: "Judge", ar: "قاضی" },
-  { en: "Court", ar: "محكمة" },
-  { en: "Law", ar: "قانون" },
-  { en: "Legislation", ar: "تشریع" },
-  { en: "Statute", ar: "مادة في قانون" },
-  { en: "Enact", ar: "یصدر" },
-  { en: "Constitution", ar: "دستور" },
-  { en: "Ordinary legislation", ar: "تشریع عادي" },
-  { en: "Necessity decree", ar: "تشریع ضرورة" },
-  { en: "Presidential decree", ar: "قرار رئیس الجمھوریة بإصدار قانون" },
-  { en: "Subordinate legislation", ar: "تشریع تبعي أو فرعي" },
-  { en: "Council of ministers", ar: "مجلس الوزراء" },
-  { en: "Executive regulations", ar: "لوائح تنفیذیة" },
-  { en: "Organizational regulations", ar: "لوائح تنظیمیة" },
-  { en: "Adoption", ar: "إتخاذ إجراء" },
-  { en: "Innocent", ar: "برىء" },
-  { en: "Complaint", ar: "شكوى" },
-  { en: "Judgment", ar: "حكم" },
-  { en: "Hearing", ar: "مرافعة" },
-  { en: "Special majority", ar: "أغلبیة خاصة" },
-  { en: "Absolute majority", ar: "أغلبیة مطلقة" },
-  { en: "Elections", ar: "إنتخابات" },
-  { en: "Political parties", ar: "أحزاب سیاسیة" },
-  { en: "Judiciary", ar: "القضاء" },
-  { en: "Balance of power", ar: "توازن السلطات" },
-  { en: "Domicile", ar: "موطن" },
-  { en: "Jurisdiction", ar: "إختصاص" },
-  { en: "Explicit abolishment", ar: "إلغاء صریح" },
-  { en: "Implicit abolishment", ar: "إلغاء ضمني" },
-  { en: "Amending a statute", ar: "تعدیل مادة" },
-  { en: "Constituent authority", ar: "السلطة التأسیسیة" },
-  { en: "Custom", ar: "عرف" },
-  { en: "Habit", ar: "عادة" },
-  { en: "Trial", ar: "محاكمة" },
-  { en: "Lawyers", ar: "المحامین" },
-  { en: "Testify", ar: "یشھد" },
-  { en: "Witness", ar: "الشاھد" },
-  { en: "Holder of right", ar: "صاحب الحق" },
-  { en: "Legal personality", ar: "شخصیة قانونیة" },
-  { en: "Natural person", ar: "شخص طبیعي" },
-  { en: "Juristic Person", ar: "شخص إعتباري" },
-  { en: "Illegal", ar: "غیر قانوني" },
-  { en: "Direct effect", ar: "أثر فوري" },
-  { en: "Retroactive effect", ar: "أثر رجعي" },
-  { en: "Plaintiff", ar: "المدعى" },
-  { en: "Defendant", ar: "المدعى علیھ" },
-  { en: "Verdict Judgment, Court decision", ar: "الحكم" },
-  { en: "Arbitration", ar: "التحكیم" },
-  { en: "Arbitrator", ar: "المحكم" },
-  { en: "Award", ar: "حكم المحكم" },
-  { en: "Misdemeanor", ar: "جنحة" },
-  { en: "Felonies", ar: "جنایات" },
-  { en: "Consideration", ar: "مقابل مادي" },
-  { en: "Claim For", ar: "یطالب بـ" },
-  { en: "In the court", ar: "في المحكمة" },
-  { en: "Citizen", ar: "مواطن" },
-  { en: "Nationality", ar: "جنسیة" },
-  { en: "Obligation of means", ar: "التزام ببذل عنایة" },
-  { en: "Life Imprisonment", ar: "السجن المؤبد" },
-  { en: "Aggravated Imprisonment", ar: "السجن المشدد" },
-  { en: "Incarceration", ar: "الحبس" },
-  { en: "Prison", ar: "السجن" },
-  { en: "Consanguinity", ar: "قرابة النسب" },
-  { en: "Felony", ar: "جنایة" },
-  { en: "Affinity", ar: "قرابة المصاھرة" },
-  { en: "Theft", ar: "السرقة" },
-  { en: "Public property", ar: "ملكية عامة" },
-  { en: "Movable", ar: "منقول" },
-  { en: "Immovable", ar: "عقار" },
-  { en: "Consumable things", ar: "أشياء قابلة للإستهلاك" },
-  { en: "Non-consumable things", ar: "أشياء غير قابلة للإهلاك" },
-  { en: "Fungible things", ar: "أشياء مثلية" },
-  { en: "Non-fungible things", ar: "أشياء قيمية" },
-  { en: "Obligation of result", ar: "التزام بتحقيق نتيجة" },
-  { en: "Capacity", ar: "أهلية" },
-  { en: "Capacity to enjoy", ar: "أهلية الوجوب" },
-  { en: "Capacity to exercise", ar: "أهلية الأداء" },
-  { en: "Legal transaction", ar: "تصرف قانوني" },
-  { en: "Completely beneficial transaction", ar: "تصرف نافع نفعاً محضاً" },
-  { en: "Completely detrimental transaction", ar: "تصرف ضار ضرراً محضاً" },
-  { en: "Transaction spinning between profit and loss", ar: "تصرف دائر بين النفع والضرر" },
-  { en: "Valid", ar: "صحيح" },
-  { en: "Void", ar: "باطل" },
-  { en: "Voidable", ar: "قابل للإبطال" },
-  { en: "Legitimate", ar: "مشروع" },
-  { en: "Illegitimate", ar: "غير مشروع" },
-  { en: "Non-discerning minor", ar: "صبي غير مميز" },
-  { en: "Discerning minor", ar: "صبي مميز" },
-  { en: "Major", ar: "راشد" },
-  { en: "Age of majority", ar: "سن الرشد" },
-  { en: "Patrimony", ar: "ذمة مالية" },
-  { en: "Thief", ar: "السارق" },
-  { en: "Retribution", ar: "القصاص" },
-  { en: "Life sentence", ar: "حكم مؤبد" },
-  { en: "Death sentence", ar: "حكم بالإعدام" },
-  { en: "Arrest", ar: "إعتقال" },
-  { en: "Accuse", ar: "إتهام" },
-  { en: "Alibi", ar: "إدعاء المتھم" },
-  { en: "The theory of right", ar: "نظریة الحق" },
-  { en: "Non-monetary rights", ar: "الحقوق غیر المالیة" },
-  { en: "Monetary rights", ar: "الحقوق المالیة" },
-  { en: "Mixed rights", ar: "الحقوق المختلطة" },
-  { en: "Intellectual property rights", ar: "حقوق الملكية الفكریة" },
-  { en: "Assignable", ar: "يمكن التصرف فيه" },
-  { en: "Unassignable", ar: "لا يمكن التصرف فيه" },
-  { en: "Personality rights", ar: "حقوق الشخصية" },
-  { en: "Torture", ar: "تعذيب" },
-  { en: "Judicial warrant", ar: "إذن قضائي" },
-  { en: "Inviolability of domicile", ar: "حرمة المسكن" },
-  { en: "Private life", ar: "الحياة الخاصة" },
-  { en: "Defamation", ar: "القذف" },
-  { en: "Eavesdropping on phone calls", ar: "التصنت على المكالمات الهاتفية" },
-  { en: "Intercepting mails", ar: "اعتراض الرسائل البريدية" },
-  { en: "Political rights", ar: "حقوق سياسية" },
-  { en: "The right to vote", ar: "حق التصويت" },
-  { en: "The right to run for office", ar: "حق الترشح لمنصب" },
-  { en: "The right to hold public office", ar: "الحق في تولي الوظائف العامة" },
-  { en: "Family rights", ar: "الحقوق العائلية" },
-  { en: "Real rights", ar: "الحقوق العينية" },
-  { en: "Principal real rights", ar: "الحقوق العينية الأصلية" },
-  { en: "Accessory real rights", ar: "الحقوق العقارية التبعية" },
-  { en: "Property right", ar: "حق الملكية" },
-  { en: "Rights derived from property", ar: "الحقوق المتفرعة من الملكية" },
-  { en: "Usage", ar: "الإستعمال" },
-  { en: "Exploitation", ar: "الإستغلال" },
-  { en: "Disposition", ar: "التصرف" },
-  { en: "Usufruct", ar: "حق الانتفاع" },
-  { en: "Housing", ar: "حق السكنى" },
-  { en: "Servitude", ar: "حق الإرتفاق" },
-  { en: "Right to passage", ar: "حق المرور" },
-  { en: "Mortgage", ar: "الرهن الرسمي" },
-  { en: "Mortgagor", ar: "الراهن" },
-  { en: "Mortgagee", ar: "المرتهن" },
-  { en: "Lender", ar: "مقرض" },
-  { en: "Borrower", ar: "مقترض" },
-  { en: "Pledge", ar: "الرهن الحيازي" },
-  { en: "Judgment lien", ar: "حق الإمتياز" },
-  { en: "Privileged rights", ar: "حقوق الإمتياز" },
-  { en: "Creditor", ar: "دائن" },
-  { en: "Debtor", ar: "مدين" },
-  { en: "Personal rights", ar: "حقوق شخصية" },
-  { en: "Obligation", ar: "التزام" },
-  { en: "An obligation to do", ar: "التزام بعمل" },
-  { en: "An obligation not to do", ar: "التزام بالإمتناع عن عمل" },
-  { en: "An obligation to deliver", ar: "التزام بإعطاء" },
-  { en: "Copyright", ar: "حق المؤلف" },
-  { en: "Author", ar: "مؤلف" },
-  { en: "Patent", ar: "براءة إختراع" },
-  { en: "Inventor", ar: "مخترع" },
-  { en: "Trademark", ar: "علامة تجارية" },
-];
-
+  const legalTerms = [
+    { en: "The theory of law", ar: "نظریة القانون" },
+    { en: "Legal rule", ar: "قاعدة قانونیة" },
+    { en: "Legal system", ar: "النظام القانوني" },
+    { en: "Crime", ar: "جریمة" },
+    { en: "Criminal", ar: "مجرم" },
+    { en: "Premeditated murder", ar: "قتل مع سبق الإصرار والترصد" },
+    { en: "Intentional murder", ar: "قتل عمدي" },
+    { en: "Unintentional murder", ar: "قتل غیر عمدي" },
+    { en: "Negligence", ar: "إھمال" },
+    { en: "Murderer", ar: "قاتل" },
+    { en: "Legal sanction", ar: "جزاء قانوني" },
+    { en: "Compensation", ar: "تعویض" },
+    { en: "Death penalty (Capital Punishment)", ar: "الإعدام" },
+    { en: "Sentenced to death", ar: "یحكم بإعدامھ" },
+    { en: "Imprisonment", ar: "السجن" },
+    { en: "Fine", ar: "غرامة" },
+    { en: "Dismissal from the job", ar: "الفصل من الوظیفة" },
+    { en: "Civil sanction", ar: "جزاء مدني" },
+    { en: "Criminal sanction", ar: "جزاء جنائي" },
+    { en: "Administrative sanction", ar: "جزاء إداري" },
+    { en: "Tortious Act", ar: "فعل تقصیري" },
+    { en: "Supreme Constitutional Court", ar: "المحكمة الدستوریة العلیا" },
+    { en: "Public Law", ar: "القانون العام" },
+    { en: "Private Law", ar: "القانون الخاص" },
+    { en: "Public sector", ar: "القطاع العام" },
+    { en: "Private sector", ar: "القطاع الخاص" },
+    { en: "Interest", ar: "مصلحة" },
+    { en: "Expropriation", ar: "نزع الملكیة للمنفعة العامة" },
+    { en: "Constitutional law", ar: "القانون الدستوري" },
+    { en: "Political system", ar: "النظام السیاسي" },
+    { en: "Public authority", ar: "سلطة عامة" },
+    { en: "Legislative authority", ar: "السلطة التشریعیة" },
+    { en: "House of Representatives", ar: "مجلس النواب" },
+    { en: "Executive authority", ar: "السلطة التنفیذیة" },
+    { en: "Government", ar: "الحكومة" },
+    { en: "Judicial authority", ar: "السلطة القضائیة" },
+    { en: "Freedom of expression", ar: "حریة التعبیر عن الرأي" },
+    { en: "Freedom of religion", ar: "حریة إختیار الدین" },
+    { en: "Administrative law", ar: "القانون الإداري" },
+    { en: "Local government system", ar: "نظام الحكم المحلي" },
+    { en: "Centralized government", ar: "الحكومة المركزیة" },
+    { en: "Public Utility", ar: "مرفق عام" },
+    { en: "Financial law", ar: "القانون المالي" },
+    { en: "Criminal law", ar: "القانون الجنائي" },
+    { en: "Penal law", ar: "قانون العقوبات" },
+    { en: "Criminal procedures law", ar: "قانون الإجراءات الجنائیة" },
+    { en: "Suspect", ar: "مشتبھ فیھ" },
+    { en: "Accused", ar: "متھم" },
+    { en: "Prosecution", ar: "تحقیق" },
+    { en: "Victim", ar: "ضحیة" },
+    { en: "Public international law", ar: "القانون الدولي العام" },
+    { en: "International organizations", ar: "المنظمات الدولیة" },
+    { en: "International treaties", ar: "المعاھدات الدولیة" },
+    { en: "Peace", ar: "السلام" },
+    { en: "War", ar: "الحرب" },
+    { en: "Civil law", ar: "القانون المدني" },
+    { en: "Personal relationship", ar: "علاقة شخصیة" },
+    { en: "Monetary relationship", ar: "علاقة مالیة" },
+    { en: "Commercial law", ar: "القانون التجاري" },
+    { en: "Merchant", ar: "تاجر" },
+    { en: "Bankruptcy", ar: "إفلاس" },
+    { en: "Company", ar: "شركة" },
+    { en: "Law of civil and commercial procedures", ar: "قانون المرافعات المدنیة والتجاریة" },
+    { en: "Labor law", ar: "قانون العمل" },
+    { en: "Conflict of laws", ar: "تنازع القوانین" },
+    { en: "Private international law", ar: "القانون الدولي الخاص" },
+    { en: "Competent court", ar: "المحكمة المختصة" },
+    { en: "Imperative rule", ar: "قاعدة آمرة" },
+    { en: "Supplementary rule", ar: "قاعدة مكملة" },
+    { en: "Personal liberty", ar: "حریة شخصیة" },
+    { en: "Public order", ar: "النظام العام" },
+    { en: "Public morals", ar: "الآداب العامة" },
+    { en: "Judge", ar: "قاضی" },
+    { en: "Court", ar: "محكمة" },
+    { en: "Law", ar: "قانون" },
+    { en: "Legislation", ar: "تشریع" },
+    { en: "Statute", ar: "مادة في قانون" },
+    { en: "Enact", ar: "یصدر" },
+    { en: "Constitution", ar: "دستور" },
+    { en: "Ordinary legislation", ar: "تشریع عادي" },
+    { en: "Necessity decree", ar: "تشریع ضرورة" },
+    { en: "Presidential decree", ar: "قرار رئیس الجمھوریة بإصدار قانون" },
+    { en: "Subordinate legislation", ar: "تشریع تبعي أو فرعي" },
+    { en: "Council of ministers", ar: "مجلس الوزراء" },
+    { en: "Executive regulations", ar: "لوائح تنفیذیة" },
+    { en: "Organizational regulations", ar: "لوائح تنظیمیة" },
+    { en: "Adoption", ar: "إتخاذ إجراء" },
+    { en: "Innocent", ar: "برىء" },
+    { en: "Complaint", ar: "شكوى" },
+    { en: "Judgment", ar: "حكم" },
+    { en: "Hearing", ar: "مرافعة" },
+    { en: "Special majority", ar: "أغلبیة خاصة" },
+    { en: "Absolute majority", ar: "أغلبیة مطلقة" },
+    { en: "Elections", ar: "إنتخابات" },
+    { en: "Political parties", ar: "أحزاب سیاسیة" },
+    { en: "Judiciary", ar: "القضاء" },
+    { en: "Balance of power", ar: "توازن السلطات" },
+    { en: "Domicile", ar: "موطن" },
+    { en: "Jurisdiction", ar: "إختصاص" },
+    { en: "Explicit abolishment", ar: "إلغاء صریح" },
+    { en: "Implicit abolishment", ar: "إلغاء ضمني" },
+    { en: "Amending a statute", ar: "تعدیل مادة" },
+    { en: "Constituent authority", ar: "السلطة التأسیسیة" },
+    { en: "Custom", ar: "عرف" },
+    { en: "Habit", ar: "عادة" },
+    { en: "Trial", ar: "محاكمة" },
+    { en: "Lawyers", ar: "المحامین" },
+    { en: "Testify", ar: "یشھد" },
+    { en: "Witness", ar: "الشاھد" },
+    { en: "Holder of right", ar: "صاحب الحق" },
+    { en: "Legal personality", ar: "شخصیة قانونیة" },
+    { en: "Natural person", ar: "شخص طبیعي" },
+    { en: "Juristic Person", ar: "شخص إعتباري" },
+    { en: "Illegal", ar: "غیر قانوني" },
+    { en: "Direct effect", ar: "أثر فوري" },
+    { en: "Retroactive effect", ar: "أثر رجعي" },
+    { en: "Plaintiff", ar: "المدعى" },
+    { en: "Defendant", ar: "المدعى علیھ" },
+    { en: "Verdict Judgment, Court decision", ar: "الحكم" },
+    { en: "Arbitration", ar: "التحكیم" },
+    { en: "Arbitrator", ar: "المحكم" },
+    { en: "Award", ar: "حكم المحكم" },
+    { en: "Misdemeanor", ar: "جنحة" },
+    { en: "Felonies", ar: "جنایات" },
+    { en: "Consideration", ar: "مقابل مادي" },
+    { en: "Claim For", ar: "یطالب بـ" },
+    { en: "In the court", ar: "في المحكمة" },
+    { en: "Citizen", ar: "مواطن" },
+    { en: "Nationality", ar: "جنسیة" },
+    { en: "Obligation of means", ar: "التزام ببذل عنایة" },
+    { en: "Life Imprisonment", ar: "السجن المؤبد" },
+    { en: "Aggravated Imprisonment", ar: "السجن المشدد" },
+    { en: "Incarceration", ar: "الحبس" },
+    { en: "Prison", ar: "السجن" },
+    { en: "Consanguinity", ar: "قرابة النسب" },
+    { en: "Felony", ar: "جنایة" },
+    { en: "Affinity", ar: "قرابة المصاھرة" },
+    { en: "Theft", ar: "السرقة" },
+    { en: "Public property", ar: "ملكية عامة" },
+    { en: "Movable", ar: "منقول" },
+    { en: "Immovable", ar: "عقار" },
+    { en: "Consumable things", ar: "أشياء قابلة للإستهلاك" },
+    { en: "Non-consumable things", ar: "أشياء غير قابلة للإهلاك" },
+    { en: "Fungible things", ar: "أشياء مثلية" },
+    { en: "Non-fungible things", ar: "أشياء قيمية" },
+    { en: "Obligation of result", ar: "التزام بتحقيق نتيجة" },
+    { en: "Capacity", ar: "أهلية" },
+    { en: "Capacity to enjoy", ar: "أهلية الوجوب" },
+    { en: "Capacity to exercise", ar: "أهلية الأداء" },
+    { en: "Legal transaction", ar: "تصرف قانوني" },
+    { en: "Completely beneficial transaction", ar: "تصرف نافع نفعاً محضاً" },
+    { en: "Completely detrimental transaction", ar: "تصرف ضار ضرراً محضاً" },
+    { en: "Transaction spinning between profit and loss", ar: "تصرف دائر بين النفع والضرر" },
+    { en: "Valid", ar: "صحيح" },
+    { en: "Void", ar: "باطل" },
+    { en: "Voidable", ar: "قابل للإبطال" },
+    { en: "Legitimate", ar: "مشروع" },
+    { en: "Illegitimate", ar: "غير مشروع" },
+    { en: "Non-discerning minor", ar: "صبي غير مميز" },
+    { en: "Discerning minor", ar: "صبي مميز" },
+    { en: "Major", ar: "راشد" },
+    { en: "Age of majority", ar: "سن الرشد" },
+    { en: "Patrimony", ar: "ذمة مالية" },
+    { en: "Thief", ar: "السارق" },
+    { en: "Retribution", ar: "القصاص" },
+    { en: "Life sentence", ar: "حكم مؤبد" },
+    { en: "Death sentence", ar: "حكم بالإعدام" },
+    { en: "Arrest", ar: "إعتقال" },
+    { en: "Accuse", ar: "إتهام" },
+    { en: "Alibi", ar: "إدعاء المتھم" },
+    { en: "The theory of right", ar: "نظریة الحق" },
+    { en: "Non-monetary rights", ar: "الحقوق غیر المالیة" },
+    { en: "Monetary rights", ar: "الحقوق المالیة" },
+    { en: "Mixed rights", ar: "الحقوق المختلطة" },
+    { en: "Intellectual property rights", ar: "حقوق الملكية الفكریة" },
+    { en: "Assignable", ar: "يمكن التصرف فيه" },
+    { en: "Unassignable", ar: "لا يمكن التصرف فيه" },
+    { en: "Personality rights", ar: "حقوق الشخصية" },
+    { en: "Torture", ar: "تعذيب" },
+    { en: "Judicial warrant", ar: "إذن قضائي" },
+    { en: "Inviolability of domicile", ar: "حرمة المسكن" },
+    { en: "Private life", ar: "الحياة الخاصة" },
+    { en: "Defamation", ar: "القذف" },
+    { en: "Eavesdropping on phone calls", ar: "التصنت على المكالمات الهاتفية" },
+    { en: "Intercepting mails", ar: "اعتراض الرسائل البريدية" },
+    { en: "Political rights", ar: "حقوق سياسية" },
+    { en: "The right to vote", ar: "حق التصويت" },
+    { en: "The right to run for office", ar: "حق الترشح لمنصب" },
+    { en: "The right to hold public office", ar: "الحق في تولي الوظائف العامة" },
+    { en: "Family rights", ar: "الحقوق العائلية" },
+    { en: "Real rights", ar: "الحقوق العينية" },
+    { en: "Principal real rights", ar: "الحقوق العينية الأصلية" },
+    { en: "Accessory real rights", ar: "الحقوق العقارية التبعية" },
+    { en: "Property right", ar: "حق الملكية" },
+    { en: "Rights derived from property", ar: "الحقوق المتفرعة من الملكية" },
+    { en: "Usage", ar: "الإستعمال" },
+    { en: "Exploitation", ar: "الإستغلال" },
+    { en: "Disposition", ar: "التصرف" },
+    { en: "Usufruct", ar: "حق الانتفاع" },
+    { en: "Housing", ar: "حق السكنى" },
+    { en: "Servitude", ar: "حق الإرتفاق" },
+    { en: "Right to passage", ar: "حق المرور" },
+    { en: "Mortgage", ar: "الرهن الرسمي" },
+    { en: "Mortgagor", ar: "الراهن" },
+    { en: "Mortgagee", ar: "المرتهن" },
+    { en: "Lender", ar: "مقرض" },
+    { en: "Borrower", ar: "مقترض" },
+    { en: "Pledge", ar: "الرهن الحيازي" },
+    { en: "Judgment lien", ar: "حق الإمتياز" },
+    { en: "Privileged rights", ar: "حقوق الإمتياز" },
+    { en: "Creditor", ar: "دائن" },
+    { en: "Debtor", ar: "مدين" },
+    { en: "Personal rights", ar: "حقوق شخصية" },
+    { en: "Obligation", ar: "التزام" },
+    { en: "An obligation to do", ar: "التزام بعمل" },
+    { en: "An obligation not to do", ar: "التزام بالإمتناع عن عمل" },
+    { en: "An obligation to deliver", ar: "التزام بإعطاء" },
+    { en: "Copyright", ar: "حق المؤلف" },
+    { en: "Author", ar: "مؤلف" },
+    { en: "Patent", ar: "براءة إختراع" },
+    { en: "Inventor", ar: "مخترع" },
+    { en: "Trademark", ar: "علامة تجارية" },
+  ];
 
     const searchInput = document.getElementById("search");
     const termContainer = document.getElementById("termContainer");
+    const examContainer = document.getElementById("examContainer");
     const voiceSelect = document.getElementById("voiceSelect");
+    const modal = document.getElementById("customModal");
+    const modalMessage = document.getElementById("modalMessage");
+    const modalConfirm = document.getElementById("modalConfirm");
+    const modalCancel = document.getElementById("modalCancel");
 
     const filterButtons = {
       all: document.getElementById("filterAll"),
       saved: document.getElementById("filterSaved"),
       unsaved: document.getElementById("filterUnsaved"),
+      examStart: document.getElementById("startExam"),
     };
 
     let savedTerms = JSON.parse(localStorage.getItem("savedTerms")) || [];
     let currentFilter = "all";
     let voices = [];
+    let examState = null;
 
-    // Populate voices in the dropdown
+    // Populate voices and load saved voice
     function populateVoices() {
       voices = window.speechSynthesis.getVoices();
       voiceSelect.innerHTML = '<option value="">اختر صوتاً</option>';
@@ -420,11 +542,23 @@ const legalTerms = [
         option.textContent = `${voice.name} (${voice.lang})`;
         voiceSelect.appendChild(option);
       });
+
+      // Load saved voice from localStorage
+      const savedVoiceIndex = localStorage.getItem("selectedVoiceIndex");
+      if (savedVoiceIndex !== null && voices[savedVoiceIndex]) {
+        voiceSelect.value = savedVoiceIndex;
+      }
     }
 
-    // Load voices (handle asynchronous loading)
+    // Load voices
     window.speechSynthesis.onvoiceschanged = populateVoices;
-    populateVoices(); // Initial call in case voices are already loaded
+    populateVoices();
+
+    // Save selected voice on change
+    voiceSelect.addEventListener("change", () => {
+      const selectedVoiceIndex = voiceSelect.value;
+      localStorage.setItem("selectedVoiceIndex", selectedVoiceIndex);
+    });
 
     function speakText(text) {
       window.speechSynthesis.cancel();
@@ -448,7 +582,7 @@ const legalTerms = [
 
     function renderTerms() {
       const search = searchInput.value.toLowerCase();
-      termContainer.innerHTML = "";
+      termContainer.innerHTML = '';
 
       legalTerms
         .filter((term) => {
@@ -481,14 +615,132 @@ const legalTerms = [
             renderTerms();
           });
 
-          const speakerBtns = card.querySelectorAll(".speaker-btn");
-          speakerBtns[0].addEventListener("click", () => speakText(term.en));
-          speakerBtns[1].addEventListener("click", () => speakText(term.ar));
+          const speakerButtons = card.querySelectorAll(".speaker-btn");
+          speakerButtons[0].addEventListener("click", () => speakText(term.en));
+          speakerButtons[1].addEventListener("click", () => speakText(term.ar));
 
           termContainer.appendChild(card);
         });
 
       updateButtonCounts();
+    }
+
+    function showModal(message, onConfirm) {
+      modalMessage.textContent = message;
+      modal.classList.add("show");
+      modalConfirm.onclick = () => {
+        modal.classList.remove("show");
+        onConfirm();
+      };
+      modalCancel.onclick = () => modal.classList.remove("show");
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function generateExam() {
+      if (savedTerms.length < 10) {
+        showModal("يجب حفظ 10 مصطلحات على الأقل لبدء الامتحان.", () => {});
+        return;
+      }
+
+      showModal("هل تريد الدخول في الامتحان؟", () => {
+        const questionCount = Math.min(savedTerms.length, 50);
+        const savedTermObjs = legalTerms.filter(term => savedTerms.includes(term.en));
+        const usedTerms = new Set();
+        const questions = [];
+
+        while (questions.length < questionCount && savedTermObjs.length > questions.length) {
+          const availableTerms = savedTermObjs.filter(term => !usedTerms.has(term.en));
+          if (!availableTerms.length) break;
+
+          const term = availableTerms[Math.floor(Math.random() * availableTerms.length)];
+          usedTerms.add(term.en);
+          const isArabicQuestion = Math.random() < 0.5;
+          const questionText = isArabicQuestion ? term.ar : term.en;
+          const correctAnswer = isArabicQuestion ? term.en : term.ar;
+
+          const incorrectOptions = shuffleArray([...legalTerms.filter(t => t.en !== term.en)])
+            .slice(0, 3)
+            .map(t => isArabicQuestion ? t.en : t.ar);
+
+          const options = shuffleArray([correctAnswer, ...incorrectOptions]);
+          questions.push({ question: questionText, correctAnswer, options });
+        }
+
+        examState = { questions, currentQuestion: 0, correctCount: 0 };
+        renderExam();
+      });
+    }
+
+    function renderExam() {
+      termContainer.style.display = "none";
+      examContainer.classList.add("active");
+      examContainer.innerHTML = "";
+
+      const { questions, currentQuestion } = examState;
+      if (currentQuestion >= questions.length) {
+        const percentage = ((examState.correctCount / questions.length) * 100).toFixed(2);
+        examContainer.innerHTML = `
+          <div class="result">
+            <h2>نتيجة الامتحان</h2>
+            <p>الدرجة: ${examState.correctCount} / ${questions.length} (${percentage}%)</p>
+            <button class="modal-btn confirm-btn">رجوع إلى القاموس</button>
+          </div>
+        `;
+        examContainer.querySelector("button").addEventListener("click", () => {
+          resetExam();
+          renderTerms();
+        });
+        return;
+      }
+
+      const question = questions[currentQuestion];
+      const questionDiv = document.createElement("div");
+      questionDiv.className = "question";
+      questionDiv.innerHTML = `
+        <h3>السؤال ${currentQuestion + 1}: ${question.question}</h3>
+        <div class="options">
+          ${question.options.map((option, idx) => `
+            <button class="option-btn">${option}</button>
+          `).join('')}
+        </div>
+      `;
+      examContainer.appendChild(questionDiv);
+
+      const optionButtons = questionDiv.querySelectorAll(".option-btn");
+      optionButtons.forEach((btn, idx) => {
+        btn.addEventListener("click", () => {
+          optionButtons.forEach(b => b.disabled = true);
+          if (question.options[idx] === question.correctAnswer) {
+            btn.classList.add("correct");
+            examState.correctCount++;
+          } else {
+            btn.classList.add("incorrect");
+            optionButtons.forEach((b, i) => {
+              if (question.options[i] === question.correctAnswer) {
+                b.classList.add("correct");
+              }
+            });
+          }
+          setTimeout(() => {
+            examState.currentQuestion++;
+            renderExam();
+          }, 1000);
+        });
+      });
+    }
+
+    function resetExam() {
+      termContainer.style.display = "grid";
+      examContainer.classList.remove("active");
+      examContainer.innerHTML = "";
+      examState = null;
     }
 
     function updateFilter(filter) {
@@ -504,6 +756,7 @@ const legalTerms = [
     filterButtons.all.addEventListener("click", () => updateFilter("all"));
     filterButtons.saved.addEventListener("click", () => updateFilter("saved"));
     filterButtons.unsaved.addEventListener("click", () => updateFilter("unsaved"));
+    filterButtons.examStart.addEventListener("click", generateExam);
 
     renderTerms();
 
@@ -512,7 +765,7 @@ const legalTerms = [
       event.preventDefault();
     });
 
-    // Prevent developer tools shortcuts
+    // Prevent developer tool shortcuts
     document.onkeydown = function(e) {
       if (e.key === 'F12') {
         e.preventDefault();
@@ -534,6 +787,7 @@ const legalTerms = [
   </script>
 </body>
 </html>
+
 
 <!--
 
