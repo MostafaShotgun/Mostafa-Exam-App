@@ -389,12 +389,31 @@ const legalTerms = [
     let savedTerms = JSON.parse(localStorage.getItem("savedTerms")) || [];
     let currentFilter = "all";
 
-    function speakText(text, lang) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      window.speechSynthesis.speak(utterance);
+function speakText(text, lang) {
+  window.speechSynthesis.cancel();
+  
+  const utterance = new SpeechSynthesisUtterance(text);
+  const voices = window.speechSynthesis.getVoices();
+
+  // نحاول نلاقي صوت مطابق للغة
+  let voice = voices.find(v => v.lang === lang);
+
+  // لو بندور على إنجليزي أمريكي لكن فيه بريطاني، نستخدم البريطاني
+  if (lang === "en-US") {
+    const britishVoice = voices.find(v => v.lang === "en-GB");
+    if (britishVoice) {
+      voice = britishVoice;
     }
+  }
+
+  if (voice) {
+    utterance.voice = voice;
+  }
+
+  utterance.lang = voice?.lang || lang;
+  window.speechSynthesis.speak(utterance);
+}
+
 
     function updateButtonCounts() {
       const totalCount = legalTerms.length;
