@@ -60,6 +60,19 @@
       color: white;
     }
 
+    .voice-selector {
+      margin: 1rem auto;
+      text-align: center;
+    }
+
+    .voice-selector select {
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      width: 200px;
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -137,7 +150,12 @@
     <h1>📘 LegalLexicon</h1>
     <p>قاموس قانوني عربي - إنجليزي تفاعلي</p>
     <input type="text" id="search" placeholder="ابحث عن مصطلح..." />
-
+    <div class="voice-selector">
+      <label for="voiceSelect">اختر الصوت:</label>
+      <select id="voiceSelect">
+        <option value="">تحميل الأصوات...</option>
+      </select>
+    </div>
     <div class="filters">
       <button id="filterAll" class="active">الكل</button>
       <button id="filterSaved">المحفوظ فقط</button>
@@ -377,8 +395,10 @@ const legalTerms = [
   { en: "Trademark", ar: "علامة تجارية" },
 ];
 
+
     const searchInput = document.getElementById("search");
     const termContainer = document.getElementById("termContainer");
+    const voiceSelect = document.getElementById("voiceSelect");
 
     const filterButtons = {
       all: document.getElementById("filterAll"),
@@ -388,32 +408,34 @@ const legalTerms = [
 
     let savedTerms = JSON.parse(localStorage.getItem("savedTerms")) || [];
     let currentFilter = "all";
+    let voices = [];
 
-function speakText(text, lang) {
-  window.speechSynthesis.cancel();
-  
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voices = window.speechSynthesis.getVoices();
-
-  // نحاول نلاقي صوت مطابق للغة
-  let voice = voices.find(v => v.lang === lang);
-
-  // لو بندور على إنجليزي أمريكي لكن فيه بريطاني، نستخدم البريطاني
-  if (lang === "en-US") {
-    const britishVoice = voices.find(v => v.lang === "en-GB");
-    if (britishVoice) {
-      voice = britishVoice;
+    // Populate voices in the dropdown
+    function populateVoices() {
+      voices = window.speechSynthesis.getVoices();
+      voiceSelect.innerHTML = '<option value="">اختر صوتاً</option>';
+      voices.forEach((voice, index) => {
+        const option = document.createElement("option");
+        option.value = index;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
     }
-  }
 
-  if (voice) {
-    utterance.voice = voice;
-  }
+    // Load voices (handle asynchronous loading)
+    window.speechSynthesis.onvoiceschanged = populateVoices;
+    populateVoices(); // Initial call in case voices are already loaded
 
-  utterance.lang = voice?.lang || lang;
-  window.speechSynthesis.speak(utterance);
-}
-
+    function speakText(text) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      const selectedVoiceIndex = voiceSelect.value;
+      if (selectedVoiceIndex !== "") {
+        utterance.voice = voices[selectedVoiceIndex];
+        utterance.lang = voices[selectedVoiceIndex].lang;
+      }
+      window.speechSynthesis.speak(utterance);
+    }
 
     function updateButtonCounts() {
       const totalCount = legalTerms.length;
@@ -460,8 +482,8 @@ function speakText(text, lang) {
           });
 
           const speakerBtns = card.querySelectorAll(".speaker-btn");
-          speakerBtns[0].addEventListener("click", () => speakText(term.en, "en-US"));
-          // speakerBtns[1].addEventListener("click", () => speakText(term.ar, "ar-EG"));
+          speakerBtns[0].addEventListener("click", () => speakText(term.en));
+          speakerBtns[1].addEventListener("click", () => speakText(term.ar));
 
           termContainer.appendChild(card);
         });
@@ -485,36 +507,30 @@ function speakText(text, lang) {
 
     renderTerms();
 
-    
-// منع النقر الأيمن
-document.addEventListener('contextmenu', function(event) {
-    event.preventDefault();
-});
+    // Prevent right-click
+    document.addEventListener('contextmenu', function(event) {
+      event.preventDefault();
+    });
 
-// منع اختصارات F12 و Ctrl + Shift + I و Ctrl + U
-document.onkeydown = function(e) {
-    // منع F12 (فتح أدوات المطور)
-    if (e.key === 'F12') {
+    // Prevent developer tools shortcuts
+    document.onkeydown = function(e) {
+      if (e.key === 'F12') {
         e.preventDefault();
         return false;
-    }
-    // منع Ctrl + Shift + I (فتح أدوات المطور)
-    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+      }
+      if (e.ctrlKey && e.shiftKey && e.key === 'I') {
         e.preventDefault();
         return false;
-    }
-    // منع Ctrl + U (عرض المصدر)
-    if (e.ctrlKey && e.key === 'u') {
+      }
+      if (e.ctrlKey && e.key === 'u') {
         e.preventDefault();
         return false;
-    }
-    // منع Ctrl + Shift + J (افتتاح وحدة التحكم في بعض المتصفحات)
-    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+      }
+      if (e.ctrlKey && e.shiftKey && e.key === 'J') {
         e.preventDefault();
         return false;
-    }
-};
-
+      }
+    };
   </script>
 </body>
 </html>
